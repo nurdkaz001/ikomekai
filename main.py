@@ -23,7 +23,10 @@ SUPABASE_KEY = os.getenv("SUPABASE_KEY", "")
 
 supabase: Client = None
 if SUPABASE_URL and SUPABASE_KEY:
-    supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
+    try:
+        supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
+    except Exception as e:
+        print("Supabase init error:", e)
 
 # Ключ DeepSeek API
 DEEPSEEK_API_KEY = os.getenv("DEEPSEEK_API_KEY", "")
@@ -411,7 +414,7 @@ async def read_root():
 
                             <div class="card-footer">
                                 <span>${t.status} <strong>${r.status || 'Новая'}</strong></span>
-                                <span>${new Date(r.created_at).toLocaleString(currentLang === 'kz' ? 'kk-KZ' : 'ru-RU', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}</span>
+                                <span>${r.created_at ? new Date(r.created_at).toLocaleString(currentLang === 'kz' ? 'kk-KZ' : 'ru-RU', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }) : ''}</span>
                             </div>
                         </div>
                     `;
@@ -451,7 +454,6 @@ async def read_root():
             }
         });
 
-        // Добавляем анимацию вращения для иконок
         const styleSheet = document.createElement("style");
         styleSheet.type = "text/css";
         styleSheet.innerText = "@keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }";
@@ -498,13 +500,22 @@ async def create_report(
         "status": "Новая"
     }
 
-    db_response = supabase.table("incidents").insert(data).execute()
-    return {"success": True, "data": db_response.data}
+    try:
+        db_response = supabase.table("incidents").insert(data).execute()
+        return {"success": True, "data": db_response.data}
+    except Exception as e:
+        print("DB Insert Error:", e)
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 @app.get("/api/reports")
 def get_reports():
     if not supabase:
         return []
-    response = supabase.table("incidents").select("*").order("created_at", desc=True).execute()
-    return response.data
+    try:
+        # Безопасный запрос без сортировки по дате, чтобы избежать ошибок структуры таблицы
+        response = supabase.table("incidents").select("*").execute()
+        return response.data if response.data else []
+    except Exception as e:
+        print("DB Fetch Error:", e)
+        return []
