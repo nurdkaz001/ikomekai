@@ -1,7 +1,7 @@
 import os
 import json
 import requests
-from fastapi import FastAPI, Form, File, UploadFile, HTTPException
+from fastapi import FastAPI, Form, File, UploadFile, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
 from supabase import create_client, Client
@@ -87,6 +87,11 @@ async def read_root():
     return FileResponse("index.html")
 
 
+@app.get("/admin", response_class=FileResponse)
+async def admin_page():
+    return FileResponse("admin.html")
+
+
 @app.post("/api/report")
 async def create_report(
     description: str = Form(...),
@@ -144,3 +149,37 @@ def get_reports(user_id: str = None):
     except Exception as e:
         print("DB Fetch Error:", e)
         return []
+
+
+@app.get("/api/reports/all")
+def get_all_reports(category: str = None, urgency: str = None):
+    if not supabase:
+        return []
+    try:
+        query = supabase.table("incidents").select("*")
+        if category:
+            query = query.eq("category", category)
+        if urgency:
+            query = query.eq("urgency", urgency)
+            
+        response = query.order("created_at", desc=True).execute()
+        return response.data if response.data else []
+    except Exception as e:
+        print("Admin Fetch Error:", e)
+        return []
+
+
+@app.patch("/api/reports/{report_id}/status")
+async def update_report_status(report_id: str, request: Request):
+    if not supabase:
+        raise HTTPException(status_code=500, detail="Supabase не инициализирован")
+    
+    body = await request.json()
+    new_status = body.get("status")
+    
+    try:
+        response = supabase.table("incidents").update({"status": new_status}).eq("id", report_id).execute()
+        return {"success": True, "data": response.data}
+    except Exception as e:
+        print("Status Update Error:", e)
+        raise HTTPException(status_code=500, detail=str(e))
