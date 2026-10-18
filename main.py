@@ -31,7 +31,6 @@ if SUPABASE_URL and SUPABASE_KEY:
 DEEPSEEK_API_KEY = os.getenv("DEEPSEEK_API_KEY", "")
 DEEPSEEK_URL = "https://api.deepseek.com/chat/completions"
 
-# --- Логин и Пароль ---
 ADMIN_USERNAME = os.getenv("ADMIN_USERNAME", "admin")
 ADMIN_PASSWORD = os.getenv("ADMIN_PASSWORD", "ikomek2026")
 
@@ -184,6 +183,18 @@ def get_reports(user_id: str = None):
         return []
 
 
+@app.get("/api/notifications")
+def get_notifications(user_id: str):
+    if not supabase or not user_id:
+        return []
+    try:
+        response = supabase.table("notifications").select("*").eq("user_id", user_id).order("created_at", desc=True).execute()
+        return response.data if response.data else []
+    except Exception as e:
+        print("Notifications Fetch Error:", e)
+        return []
+
+
 # --- Защищенные эндпоинты ---
 
 @app.get("/api/reports/all", dependencies=[Depends(check_auth)])
@@ -213,6 +224,25 @@ async def update_report_status(report_id: str, request: Request):
     new_status = body.get("status")
     
     try:
+        # 1. Если статус меняется на "Решено"
+        if new_status == "Решено":
+            # Находим инцидент, чтобы узнать user_id и описание
+            report_res = supabase.table("incidents").select("*").eq("id", report_id).execute()
+            if report_res.data:
+                item = report_res.data[0]
+                uid = item.get("user_id")
+                desc = item.get("description", "Заявка")
+                
+                # Отправляем уведомление жителю
+                if uid:
+                    msg = f"Ваше обращение «{desc[:50]}...» успешно решено городскими службами Акимата!"
+                    supabase.table("notifications").insert({"user_id": uid, "message": msg}).execute()
+                
+                # Удаляем проблему из таблицы incidents
+                supabase.table("incidents").delete().eq("id", report_id).execute()
+                return {"success": True, "deleted": True}
+        
+        # Для других статусов ("В работе", "Новая") просто обновляем
         response = supabase.table("incidents").update({"status": new_status}).eq("id", report_id).execute()
         return {"success": True, "data": response.data}
     except Exception as e:
