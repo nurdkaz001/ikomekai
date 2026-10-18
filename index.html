@@ -4,8 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Astana Smart City — iKomek AI Portal</title>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap">
+    <link rel="stylesheet" href="[https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css](https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css)">
+    <link rel="stylesheet" href="[https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap](https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap)">
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Inter', sans-serif; }
         body { background-color: #F8FAFC; color: #1E293B; min-height: 100vh; display: flex; flex-direction: column; }
@@ -52,12 +52,13 @@
         .btn-submit:hover { background: #1D4ED8; }
         .btn-submit:active { transform: scale(0.99); }
 
-        .feed-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
-        .btn-refresh { background: #F1F5F9; border: 1px solid #CBD5E1; padding: 6px 12px; border-radius: 8px; font-size: 12px; font-weight: 600; color: #475569; cursor: pointer; display: flex; align-items: center; gap: 6px; transition: background 0.2s; }
-        .btn-refresh:hover { background: #E2E8F0; }
+        /* Вкладки */
+        .tab-buttons { display: flex; gap: 8px; border-bottom: 1px solid #E2E8F0; padding-bottom: 12px; margin-bottom: 16px; }
+        .tab-btn { background: none; border: none; padding: 8px 14px; font-size: 13px; font-weight: 600; color: #64748B; cursor: pointer; border-radius: 8px; transition: all 0.2s; display: flex; align-items: center; gap: 6px; }
+        .tab-btn.active { background: #EFF6FF; color: #2563EB; }
+        .notif-badge { background: #EF4444; color: white; font-size: 10px; font-weight: 700; padding: 2px 6px; border-radius: 99px; }
 
         .report-card { background: white; border: 1px solid #E2E8F0; border-radius: 16px; padding: 20px; margin-bottom: 16px; box-shadow: 0 2px 10px rgba(0,0,0,0.02); transition: transform 0.2s; }
-        .report-card:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(0,0,0,0.04); }
         .card-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
         .category-tag { background: #F1F5F9; border: 1px solid #CBD5E1; padding: 4px 10px; border-radius: 8px; font-size: 11px; font-weight: 600; color: #334155; display: flex; align-items: center; gap: 6px; }
         .urgency-tag { padding: 4px 10px; border-radius: 8px; font-size: 11px; font-weight: 600; border: 1px solid; }
@@ -74,6 +75,9 @@
         .ai-text { font-size: 12px; color: #475569; line-height: 1.4; }
 
         .card-footer { display: flex; justify-content: space-between; align-items: center; font-size: 11px; color: #94A3B8; border-top: 1px solid #F1F5F9; padding-top: 10px; }
+        
+        .notif-card { background: #F0FDF4; border: 1px solid #BBF7D0; border-radius: 14px; padding: 16px; margin-bottom: 12px; display: flex; gap: 12px; align-items: flex-start; }
+        .notif-icon { width: 32px; height: 32px; background: #22C55E; color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 14px; flex-shrink: 0; }
         
         footer { text-align: center; padding: 20px; font-size: 11px; color: #94A3B8; border-top: 1px solid #E2E8F0; background: white; }
     </style>
@@ -140,20 +144,25 @@
         </div>
 
         <div>
-            <div class="panel" style="margin-bottom: 16px; padding: 16px 24px;">
-                <div class="feed-header" style="margin-bottom: 0;">
-                    <div>
-                        <div class="panel-title" style="margin-bottom: 2px;"><i class="fa-solid fa-list-check" style="color: #0D9488;"></i> <span data-i18n="feedTitle">Мои обращения</span></div>
-                        <div style="font-size: 11px; color: #64748B;" data-i18n="feedSub">История ваших заявок в Акимат</div>
-                    </div>
-                    <button onclick="loadReports()" class="btn-refresh">
-                        <i class="fa-solid fa-rotate-right" id="refreshIcon"></i>
-                        <span data-i18n="refreshBtn">Обновить</span>
+            <div class="panel" style="padding: 20px 24px;">
+                <div class="tab-buttons">
+                    <button class="tab-btn active" id="tabReports" onclick="switchTab('reports')">
+                        <i class="fa-solid fa-list-check"></i> <span data-i18n="feedTitle">Мои обращения</span>
+                    </button>
+                    <button class="tab-btn" id="tabNotifs" onclick="switchTab('notifs')">
+                        <i class="fa-solid fa-bell"></i> <span data-i18n="notifTitle">Уведомления</span>
+                        <span id="notifCount" class="notif-badge" style="display:none;">0</span>
                     </button>
                 </div>
-            </div>
 
-            <div id="reportsList"></div>
+                <div id="reportsView">
+                    <div id="reportsList"></div>
+                </div>
+
+                <div id="notifsView" style="display:none;">
+                    <div id="notifsList"></div>
+                </div>
+            </div>
         </div>
     </main>
 
@@ -164,7 +173,6 @@
     <script>
         const API_URL = "";
 
-        // Генерация или получение уникального ID пользователя для браузера
         let userId = localStorage.getItem('ikomek_user_id');
         if (!userId) {
             userId = 'user_' + Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
@@ -184,14 +192,14 @@
                 submitBtn: "Отправить в Акимат",
                 submitLoading: "Анализ ИИ...",
                 feedTitle: "Мои обращения",
-                feedSub: "История ваших заявок в Акимат",
-                refreshBtn: "Обновить",
-                emptyTitle: "У вас пока нет заявок",
-                emptyDesc: "Отправьте ваше первое обращение в Акимат.",
+                notifTitle: "Уведомления",
+                emptyTitle: "У вас пока нет активных заявок",
+                emptyDesc: "Решенные заявки автоматически архивятся.",
+                emptyNotif: "Уведомлений пока нет",
                 aiAnalysis: "Анализ DeepSeek AI:",
                 priority: "Приоритет:",
                 status: "Статус:",
-                errorLoad: "Ошибка загрузки данных. Проверьте подключение к серверу.",
+                errorLoad: "Ошибка загрузки данных.",
                 errorSubmit: "Ошибка при отправке!"
             },
             kz: {
@@ -206,19 +214,20 @@
                 submitBtn: "Әкімдікке жіберу",
                 submitLoading: "ЖИ талдауда...",
                 feedTitle: "Менің өтініштерім",
-                feedSub: "Әкімдікке жіберген өтініштеріңіз",
-                refreshBtn: "Жаңарту",
-                emptyTitle: "Әзірге өтінімдеріңіз жоқ",
-                emptyDesc: "Әкімдікке бірінші болып өтінім жіберіңіз.",
+                notifTitle: "Хабарламалар",
+                emptyTitle: "Белсенді өтінімдеріңіз жоқ",
+                emptyDesc: "Шешілген өтінімдер архивтеледі.",
+                emptyNotif: "Хабарламалар әлі жоқ",
                 aiAnalysis: "DeepSeek AI талдауы:",
                 priority: "Басымдық:",
                 status: "Күйі:",
-                errorLoad: "Деректерді жүктеу қатесі. Сервер байланысын тексеріңіз.",
+                errorLoad: "Деректерді жүктеу қатесі.",
                 errorSubmit: "Жіберу кезінде қате орын алды!"
             }
         };
 
         let currentLang = localStorage.getItem('ikomek_lang') || 'ru';
+        let currentTab = 'reports';
 
         function setLang(lang) {
             currentLang = lang;
@@ -237,7 +246,16 @@
                 if (translations[lang][key]) el.placeholder = translations[lang][key];
             });
 
-            loadReports();
+            loadData();
+        }
+
+        function switchTab(tab) {
+            currentTab = tab;
+            document.getElementById('tabReports').className = tab === 'reports' ? "tab-btn active" : "tab-btn";
+            document.getElementById('tabNotifs').className = tab === 'notifs' ? "tab-btn active" : "tab-btn";
+            
+            document.getElementById('reportsView').style.display = tab === 'reports' ? 'block' : 'none';
+            document.getElementById('notifsView').style.display = tab === 'notifs' ? 'block' : 'none';
         }
 
         const categoryIcons = {
@@ -267,20 +285,22 @@
             document.getElementById('fileLabel').textContent = translations[currentLang].fileChoose;
         }
 
+        async function loadData() {
+            await loadReports();
+            await loadNotifications();
+        }
+
         async function loadReports() {
             const container = document.getElementById('reportsList');
-            const refreshIcon = document.getElementById('refreshIcon');
-            refreshIcon.style.animation = 'spin 1s linear infinite';
 
             try {
-                // Передаем userId в заголовке, чтобы сервер вернул только заявки этого пользователя
                 const res = await fetch(`${API_URL}/api/reports?user_id=${userId}`);
                 const reports = await res.json();
                 const t = translations[currentLang];
                 
                 if (!reports || reports.length === 0) {
                     container.innerHTML = `
-                        <div class="panel" style="text-align: center; padding: 40px;">
+                        <div style="text-align: center; padding: 30px;">
                             <i class="fa-regular fa-folder-open" style="font-size: 28px; color: #94A3B8; margin-bottom: 8px;"></i>
                             <p style="font-size: 13px; font-weight: 600; color: #334155;">${t.emptyTitle}</p>
                             <p style="font-size: 11px; color: #94A3B8; margin-top: 4px;">${t.emptyDesc}</p>
@@ -308,11 +328,7 @@
 
                             <p class="report-desc">${r.description}</p>
 
-                            ${r.image_url ? `
-                                <div class="report-img">
-                                    <img src="${r.image_url}">
-                                </div>
-                            ` : ''}
+                            ${r.image_url ? `<div class="report-img"><img src="${r.image_url}"></div>` : ''}
 
                             <div class="ai-box">
                                 <div class="ai-title">
@@ -332,9 +348,38 @@
 
             } catch (err) {
                 const t = translations[currentLang];
-                container.innerHTML = `<div style="background:#FEF2F2; color:#DC2626; border:1px solid #FECACA; padding:12px; border-radius:10px; font-size:12px; text-align:center;">${t.errorLoad}</div>`;
-            } finally {
-                refreshIcon.style.animation = 'none';
+                container.innerHTML = `<div style="color:#DC2626; padding:12px; font-size:12px; text-align:center;">${t.errorLoad}</div>`;
+            }
+        }
+
+        async function loadNotifications() {
+            const container = document.getElementById('notifsList');
+            const badge = document.getElementById('notifCount');
+
+            try {
+                const res = await fetch(`${API_URL}/api/notifications?user_id=${userId}`);
+                const notifs = await res.json();
+                const t = translations[currentLang];
+
+                if (notifs && notifs.length > 0) {
+                    badge.textContent = notifs.length;
+                    badge.style.display = 'inline-block';
+
+                    container.innerHTML = notifs.map(n => `
+                        <div class="notif-card">
+                            <div class="notif-icon"><i class="fa-solid fa-check"></i></div>
+                            <div>
+                                <p style="font-size: 13px; font-weight: 500; color: #166534; line-height: 1.4;">${n.message}</p>
+                                <span style="font-size: 10px; color: #86EFAC;">${new Date(n.created_at).toLocaleString('ru-RU', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}</span>
+                            </div>
+                        </div>
+                    `).join('');
+                } else {
+                    badge.style.display = 'none';
+                    container.innerHTML = `<div style="text-align: center; color: #94A3B8; padding: 30px; font-size: 12px;">${t.emptyNotif}</div>`;
+                }
+            } catch (err) {
+                console.error(err);
             }
         }
 
@@ -345,7 +390,7 @@
             const formData = new FormData();
             
             formData.append('description', document.getElementById('description').value);
-            formData.append('user_id', userId); // Передаем userId при создании заявки
+            formData.append('user_id', userId);
             
             const fileInput = document.getElementById('fileInput').files[0];
             if (fileInput) formData.append('file', fileInput);
@@ -357,7 +402,7 @@
                 await fetch(`${API_URL}/api/report`, { method: 'POST', body: formData });
                 document.getElementById('reportForm').reset();
                 removeImage();
-                await loadReports();
+                await loadData();
             } catch (err) {
                 alert(t.errorSubmit);
             } finally {
@@ -366,10 +411,8 @@
             }
         });
 
-        const styleSheet = document.createElement("style");
-        styleSheet.type = "text/css";
-        styleSheet.innerText = "@keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }";
-        document.head.appendChild(styleSheet);
+        // Автообновление каждые 10 секунд
+        setInterval(loadData, 10000);
 
         setLang(currentLang);
     </script>
