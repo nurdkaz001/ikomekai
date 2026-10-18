@@ -8,7 +8,6 @@ from supabase import create_client, Client
 
 app = FastAPI()
 
-# CORS настройки
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -17,7 +16,6 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Подключение к Supabase
 SUPABASE_URL = os.getenv("SUPABASE_URL", "")
 SUPABASE_KEY = os.getenv("SUPABASE_KEY", "")
 
@@ -28,13 +26,11 @@ if SUPABASE_URL and SUPABASE_KEY:
     except Exception as e:
         print("Supabase init error:", e)
 
-# Ключ DeepSeek API
 DEEPSEEK_API_KEY = os.getenv("DEEPSEEK_API_KEY", "")
 DEEPSEEK_URL = "https://api.deepseek.com/chat/completions"
 
 
 def analyze_with_deepseek(description: str) -> dict:
-    """Анализ проблемы с помощью DeepSeek AI"""
     if not DEEPSEEK_API_KEY:
         return {
             "category": "Общее",
@@ -88,20 +84,18 @@ def analyze_with_deepseek(description: str) -> dict:
 
 @app.get("/", response_class=HTMLResponse)
 async def read_root():
-    """Интерфейс Astana iKomek AI с надежными встроенными стилями и поддержкой RU/KZ"""
     return """<!DOCTYPE html>
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Astana Smart City — iKomek AI Portal</title>
-    <link href="[https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css](https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css)" rel="stylesheet">
-    <link href="[https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap](https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap)" rel="stylesheet">
+    <link rel="stylesheet" href="[https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css](https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css)">
+    <link rel="stylesheet" href="[https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap](https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap)">
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Inter', sans-serif; }
         body { background-color: #F8FAFC; color: #1E293B; min-height: 100vh; display: flex; flex-direction: column; }
         
-        /* Header */
         header { background: rgba(255, 255, 255, 0.9); backdrop-filter: blur(10px); border-bottom: 1px solid #E2E8F0; position: sticky; top: 0; z-index: 50; }
         .header-container { max-width: 1200px; margin: 0 auto; padding: 12px 20px; display: flex; justify-content: space-between; align-items: center; }
         .logo-box { display: flex; align-items: center; gap: 12px; }
@@ -118,16 +112,13 @@ async def read_root():
         .status-badge { display: flex; align-items: center; gap: 8px; background: #F1F5F9; padding: 6px 14px; border-radius: 99px; border: 1px solid #E2E8F0; font-size: 12px; color: #475569; }
         .status-dot { width: 8px; height: 8px; background: #10B981; border-radius: 50%; box-shadow: 0 0 8px #10B981; }
 
-        /* Layout */
         main { max-width: 1200px; width: 100%; margin: 0 auto; padding: 24px 20px; display: grid; grid-template-columns: 1fr 1.4fr; gap: 24px; flex: 1; }
         @media(max-width: 900px) { main { grid-template-columns: 1fr; } }
 
-        /* Cards & Panels */
         .panel { background: white; border: 1px solid #E2E8F0; border-radius: 16px; padding: 24px; box-shadow: 0 4px 20px -2px rgba(15, 23, 42, 0.04); }
         .panel-title { font-size: 15px; font-weight: 700; color: #0F172A; display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
         .panel-desc { font-size: 12px; color: #64748B; margin-bottom: 20px; line-height: 1.4; }
 
-        /* Form elements */
         .form-group { margin-bottom: 16px; }
         label { display: block; font-size: 11px; font-weight: 700; text-transform: uppercase; color: #475569; margin-bottom: 6px; letter-spacing: 0.5px; }
         textarea { width: 100%; background: #F8FAFC; border: 1px solid #CBD5E1; border-radius: 12px; padding: 12px; font-size: 14px; color: #1E293B; resize: none; outline: none; transition: all 0.2s; }
@@ -147,7 +138,6 @@ async def read_root():
         .btn-submit:hover { background: #1D4ED8; }
         .btn-submit:active { transform: scale(0.99); }
 
-        /* Feed section */
         .feed-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
         .btn-refresh { background: #F1F5F9; border: 1px solid #CBD5E1; padding: 6px 12px; border-radius: 8px; font-size: 12px; font-weight: 600; color: #475569; cursor: pointer; display: flex; align-items: center; gap: 6px; transition: background 0.2s; }
         .btn-refresh:hover { background: #E2E8F0; }
@@ -199,7 +189,6 @@ async def read_root():
     </header>
 
     <main>
-        <!-- Форма -->
         <div>
             <div class="panel">
                 <div class="panel-title">
@@ -236,7 +225,6 @@ async def read_root():
             </div>
         </div>
 
-        <!-- Лента -->
         <div>
             <div class="panel" style="margin-bottom: 16px; padding: 16px 24px;">
                 <div class="feed-header" style="margin-bottom: 0;">
@@ -513,8 +501,7 @@ def get_reports():
     if not supabase:
         return []
     try:
-        # Безопасный запрос без сортировки по дате, чтобы избежать ошибок структуры таблицы
-        response = supabase.table("incidents").select("*").execute()
+        response = supabase.table("incidents").select("*").order("created_at", desc=True).execute()
         return response.data if response.data else []
     except Exception as e:
         print("DB Fetch Error:", e)
