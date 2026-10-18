@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Astana Smart City — Панель Акимата (Админ)</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap">
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Inter', sans-serif; }
+        body { background-color: #0F172A; color: #F8FAFC; min-height: 100vh; display: flex; flex-direction: column; }
+        
+        header { background: rgba(15, 23, 42, 0.9); backdrop-filter: blur(10px); border-bottom: 1px solid #334155; position: sticky; top: 0; z-index: 50; }
+        .header-container { max-width: 1400px; margin: 0 auto; padding: 16px 24px; display: flex; justify-content: space-between; align-items: center; }
+        .logo-box { display: flex; align-items: center; gap: 12px; }
+        .logo-icon { width: 40px; height: 40px; background: #0D9488; color: white; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 18px; }
+        .logo-text h1 { font-size: 16px; font-weight: 700; color: white; display: flex; align-items: center; gap: 8px; }
+        .badge-admin { background: #CCFBF1; color: #0F766E; font-size: 10px; font-weight: 600; padding: 2px 8px; border-radius: 99px; }
+
+        .filters-bar { max-width: 1400px; width: 100%; margin: 24px auto 0; padding: 0 24px; display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
+        .filter-select { background: #1E293B; border: 1px solid #334155; color: white; padding: 8px 14px; border-radius: 10px; font-size: 13px; outline: none; cursor: pointer; }
+        .filter-select:focus { border-color: #0D9488; }
+        
+        main { max-width: 1400px; width: 100%; margin: 0 auto; padding: 24px; flex: 1; }
+
+        .table-container { background: #1E293B; border: 1px solid #334155; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 20px rgba(0,0,0,0.2); }
+        table { width: 100%; border-collapse: collapse; text-align: left; font-size: 13px; }
+        th { background: #1E293B; color: #94A3B8; font-weight: 600; text-transform: uppercase; font-size: 11px; letter-spacing: 0.5px; padding: 16px; border-bottom: 1px solid #334155; }
+        td { padding: 16px; border-bottom: 1px solid #334155; color: #E2E8F0; vertical-align: top; }
+        tr:hover td { background: rgba(51, 65, 85, 0.4); }
+
+        .category-pill { background: #334155; color: #E2E8F0; padding: 4px 10px; border-radius: 8px; font-size: 11px; font-weight: 600; display: inline-flex; align-items: center; gap: 6px; }
+        
+        .status-badge { padding: 4px 10px; border-radius: 8px; font-size: 11px; font-weight: 600; display: inline-block; }
+        .status-new { background: #FEF2F2; color: #DC2626; }
+        .status-progress { background: #FEF3C7; color: #D97706; }
+        .status-done { background: #ECFDF5; color: #059669; }
+
+        .btn-action { background: #0D9488; color: white; border: none; padding: 6px 12px; border-radius: 8px; font-size: 12px; font-weight: 600; cursor: pointer; transition: background 0.2s; display: inline-flex; align-items: center; gap: 6px; }
+        .btn-action:hover { background: #0F766E; }
+        
+        .report-img-thumb { width: 50px; height: 50px; border-radius: 8px; object-fit: cover; border: 1px solid #334155; cursor: pointer; }
+        
+        footer { text-align: center; padding: 20px; font-size: 11px; color: #64748B; border-top: 1px solid #334155; background: #0F172A; }
+    </style>
+</head>
+<body>
+
+    <header>
+        <div class="header-container">
+            <div class="logo-box">
+                <div class="logo-icon"><i class="fa-solid fa-shield-halved"></i></div>
+                <div class="logo-text">
+                    <h1>Astana iKomek <span class="badge-admin">Центр Оперативного Управления</span></h1>
+                </div>
+            </div>
+            <div>
+                <a href="/" style="color: #94A3B8; text-decoration: none; font-size: 13px; font-weight: 600;"><i class="fa-solid fa-arrow-left"></i> На сайт жителей</a>
+            </div>
+        </div>
+    </header>
+
+    <div class="filters-bar">
+        <select id="categoryFilter" class="filter-select" onchange="loadAdminReports()">
+            <option value="">Все категории</option>
+            <option value="ЖКХ">ЖКХ</option>
+            <option value="Дороги">Дороги</option>
+            <option value="Благоустройство">Благоустройство</option>
+            <option value="Безопасность">Безопасность</option>
+        </select>
+
+        <select id="urgencyFilter" class="filter-select" onchange="loadAdminReports()">
+            <option value="">Любой приоритет</option>
+            <option value="Высокий">Высокий</option>
+            <option value="Средний">Средний</option>
+            <option value="Низкий">Низкий</option>
+        </select>
+        
+        <button onclick="loadAdminReports()" class="btn-action" style="background: #334155;"><i class="fa-solid fa-rotate"></i> Обновить</button>
+    </div>
+
+    <main>
+        <div class="table-container">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Дата / ID</th>
+                        <th>Категория</th>
+                        <th>Описание инцидента</th>
+                        <th>Фото</th>
+                        <th>Анализ ИИ</th>
+                        <th>Статус</th>
+                        <th>Действие</th>
+                    </tr>
+                </thead>
+                <tbody id="adminTableBody">
+                    <tr><td colspan="7" style="text-align: center; color: #94A3B8; padding: 40px;">Загрузка данных...</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </main>
+
+    <footer>
+        Astana IT University — Административный модуль iKomek AI 2026
+    </footer>
+
+    <script>
+        async function loadAdminReports() {
+            const category = document.getElementById('categoryFilter').value;
+            const urgency = document.getElementById('urgencyFilter').value;
+            const tbody = document.getElementById('adminTableBody');
+
+            try {
+                let url = `/api/reports/all?`;
+                if (category) url += `category=${encodeURIComponent(category)}&`;
+                if (urgency) url += `urgency=${encodeURIComponent(urgency)}`;
+
+                const res = await fetch(url);
+                const reports = await res.json();
+
+                if (!reports || reports.length === 0) {
+                    tbody.innerHTML = `<tr><td colspan="7" style="text-align: center; color: #94A3B8; padding: 40px;">Обращений не найдено</td></tr>`;
+                    return;
+                }
+
+                tbody.innerHTML = reports.map(r => {
+                    let statusClass = 'status-new';
+                    if (r.status === 'В работе') statusClass = 'status-progress';
+                    if (r.status === 'Решено') statusClass = 'status-done';
+
+                    return `
+                        <tr>
+                            <td style="font-size: 11px; color: #94A3B8;">
+                                ${new Date(r.created_at).toLocaleString('ru-RU', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}
+                                <br><span style="font-family: monospace;">#${r.id.substring(0,6)}</span>
+                            </td>
+                            <td><span class="category-pill">${r.category || 'Общее'}</span></td>
+                            <td style="max-width: 300px;">${r.description}</td>
+                            <td>
+                                ${r.image_url ? `<a href="${r.image_url}" target="_blank"><img src="${r.image_url}" class="report-img-thumb"></a>` : '<span style="color:#64748B;">Нет фото</span>'}
+                            </td>
+                            <td style="font-size: 12px; color: #94A3B8; max-width: 250px;">
+                                <strong style="color: #0D9488;">${r.urgency || 'Средний'}</strong>: ${r.ai_summary || ''}
+                            </td>
+                            <td><span class="status-badge ${statusClass}">${r.status || 'Новая'}</span></td>
+                            <td>
+                                <select onchange="updateStatus('${r.id}', this.value)" class="filter-select" style="padding: 4px 8px; font-size: 11px;">
+                                    <option value="Новая" ${r.status === 'Новая' ? 'selected' : ''}>Новая</option>
+                                    <option value="В работе" ${r.status === 'В работе' ? 'selected' : ''}>В работе</option>
+                                    <option value="Решено" ${r.status === 'Решено' ? 'selected' : ''}>Решено</option>
+                                </select>
+                            </td>
+                        </tr>
+                    `;
+                }).join('');
+
+            } catch (err) {
+                tbody.innerHTML = `<tr><td colspan="7" style="text-align: center; color: #EF4444; padding: 40px;">Ошибка загрузки данных</td></tr>`;
+            }
+        }
+
+        async function updateStatus(id, newStatus) {
+            try {
+                await fetch(`/api/reports/${id}/status`, {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ status: newStatus })
+                });
+                loadAdminReports();
+            } catch (err) {
+                alert('Не удалось обновить статус');
+            }
+        }
+
+        loadAdminReports();
+    </script>
+</body>
+</html>
