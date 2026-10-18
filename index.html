@@ -143,8 +143,8 @@
             <div class="panel" style="margin-bottom: 16px; padding: 16px 24px;">
                 <div class="feed-header" style="margin-bottom: 0;">
                     <div>
-                        <div class="panel-title" style="margin-bottom: 2px;"><i class="fa-solid fa-list-check" style="color: #0D9488;"></i> <span data-i18n="feedTitle">Мониторинг инцидентов</span></div>
-                        <div style="font-size: 11px; color: #64748B;" data-i18n="feedSub">Живой поток обращений жителей</div>
+                        <div class="panel-title" style="margin-bottom: 2px;"><i class="fa-solid fa-list-check" style="color: #0D9488;"></i> <span data-i18n="feedTitle">Мои обращения</span></div>
+                        <div style="font-size: 11px; color: #64748B;" data-i18n="feedSub">История ваших заявок в Акимат</div>
                     </div>
                     <button onclick="loadReports()" class="btn-refresh">
                         <i class="fa-solid fa-rotate-right" id="refreshIcon"></i>
@@ -164,6 +164,13 @@
     <script>
         const API_URL = "";
 
+        // Генерация или получение уникального ID пользователя для браузера
+        let userId = localStorage.getItem('ikomek_user_id');
+        if (!userId) {
+            userId = 'user_' + Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
+            localStorage.setItem('ikomek_user_id', userId);
+        }
+
         const translations = {
             ru: {
                 subtitle: "Система интеллектуального реагирования",
@@ -176,11 +183,11 @@
                 fileChoose: "Выберите фотографию",
                 submitBtn: "Отправить в Акимат",
                 submitLoading: "Анализ ИИ...",
-                feedTitle: "Мониторинг инцидентов",
-                feedSub: "Живой поток обращений жителей",
+                feedTitle: "Мои обращения",
+                feedSub: "История ваших заявок в Акимат",
                 refreshBtn: "Обновить",
-                emptyTitle: "Заявок пока нет",
-                emptyDesc: "Отправьте первое обращение в Акимат.",
+                emptyTitle: "У вас пока нет заявок",
+                emptyDesc: "Отправьте ваше первое обращение в Акимат.",
                 aiAnalysis: "Анализ DeepSeek AI:",
                 priority: "Приоритет:",
                 status: "Статус:",
@@ -198,10 +205,10 @@
                 fileChoose: "Фотосуретті таңдаңыз",
                 submitBtn: "Әкімдікке жіберу",
                 submitLoading: "ЖИ талдауда...",
-                feedTitle: "Оқиғалар мониторингі",
-                feedSub: "Тұрғындардың өтініштері",
+                feedTitle: "Менің өтініштерім",
+                feedSub: "Әкімдікке жіберген өтініштеріңіз",
                 refreshBtn: "Жаңарту",
-                emptyTitle: "Әзірге өтінімдер жоқ",
+                emptyTitle: "Әзірге өтінімдеріңіз жоқ",
                 emptyDesc: "Әкімдікке бірінші болып өтінім жіберіңіз.",
                 aiAnalysis: "DeepSeek AI талдауы:",
                 priority: "Басымдық:",
@@ -266,7 +273,8 @@
             refreshIcon.style.animation = 'spin 1s linear infinite';
 
             try {
-                const res = await fetch(`${API_URL}/api/reports`);
+                // Передаем userId в заголовке, чтобы сервер вернул только заявки этого пользователя
+                const res = await fetch(`${API_URL}/api/reports?user_id=${userId}`);
                 const reports = await res.json();
                 const t = translations[currentLang];
                 
@@ -337,6 +345,8 @@
             const formData = new FormData();
             
             formData.append('description', document.getElementById('description').value);
+            formData.append('user_id', userId); // Передаем userId при создании заявки
+            
             const fileInput = document.getElementById('fileInput').files[0];
             if (fileInput) formData.append('file', fileInput);
 
