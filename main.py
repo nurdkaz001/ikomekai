@@ -19,7 +19,7 @@ app.add_middleware(
 SUPABASE_URL = os.getenv("SUPABASE_URL", "").rstrip("/")
 SUPABASE_KEY = os.getenv("SUPABASE_KEY", "")
 
-supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
+supabase: Client = None
 if SUPABASE_URL and SUPABASE_KEY:
     try:
         supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
@@ -90,6 +90,7 @@ async def read_root():
 @app.post("/api/report")
 async def create_report(
     description: str = Form(...),
+    user_id: str = Form("anonymous"),
     file: UploadFile = File(None)
 ):
     if not supabase:
@@ -118,7 +119,8 @@ async def create_report(
         "category": parsed_ai.get("category", "Общее"),
         "urgency": parsed_ai.get("urgency", "Средний"),
         "ai_summary": parsed_ai.get("ai_summary", description),
-        "status": "Новая"
+        "status": "Новая",
+        "user_id": user_id
     }
 
     try:
@@ -130,11 +132,14 @@ async def create_report(
 
 
 @app.get("/api/reports")
-def get_reports():
+def get_reports(user_id: str = None):
     if not supabase:
         return []
     try:
-        response = supabase.table("incidents").select("*").order("created_at", desc=True).execute()
+        query = supabase.table("incidents").select("*")
+        if user_id:
+            query = query.eq("user_id", user_id)
+        response = query.order("created_at", desc=True).execute()
         return response.data if response.data else []
     except Exception as e:
         print("DB Fetch Error:", e)
