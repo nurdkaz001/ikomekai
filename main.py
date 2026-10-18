@@ -1,9 +1,11 @@
 import os
 import json
+import secrets
 import requests
-from fastapi import FastAPI, Form, File, UploadFile, HTTPException, Request
+from fastapi import FastAPI, Form, File, UploadFile, HTTPException, Request, Depends, status
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
+from fastapi.security import HTTPBasic, HTTPBasicCredentials
 from supabase import create_client, Client
 
 app = FastAPI()
@@ -16,6 +18,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# --- Настройки Supabase и DeepSeek ---
 SUPABASE_URL = os.getenv("SUPABASE_URL", "").rstrip("/")
 SUPABASE_KEY = os.getenv("SUPABASE_KEY", "")
 
@@ -28,6 +31,24 @@ if SUPABASE_URL and SUPABASE_KEY:
 
 DEEPSEEK_API_KEY = os.getenv("DEEPSEEK_API_KEY", "")
 DEEPSEEK_URL = "https://api.deepseek.com/chat/completions"
+
+# --- Настройки защиты Админки ---
+ADMIN_USERNAME = os.getenv("ADMIN_USERNAME", "admin")
+ADMIN_PASSWORD = os.getenv("ADMIN_PASSWORD", "ikomek2026")
+
+security = HTTPBasic()
+
+
+def verify_admin(credentials: HTTPBasicCredentials = Depends(security)):
+    correct_username = secrets.compare_digest(credentials.username, ADMIN_USERNAME)
+    correct_password = secrets.compare_digest(credentials.password, ADMIN_PASSWORD)
+    if not (correct_username and correct_password):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Неверный логин или пароль",
+            headers={"WWW-Authenticate": "Basic"},
+        )
+    return credentials.username
 
 
 def analyze_with_deepseek(description: str) -> dict:
@@ -82,14 +103,11 @@ def analyze_with_deepseek(description: str) -> dict:
         }
 
 
+# --- Публичные эндпоинты (для жителей) ---
+
 @app.get("/")
 async def read_root():
     return FileResponse("index.html")
-
-
-@app.get("/admin", response_class=FileResponse)
-async def admin_page():
-    return FileResponse("admin.html")
 
 
 @app.post("/api/report")
@@ -151,8 +169,15 @@ def get_reports(user_id: str = None):
         return []
 
 
+# --- Защищенные эндпоинты (только для сотрудников Акимата) ---
+
+@app.get("/admin", response_class=FileResponse)
+async def admin_page(username: str = Depends(verify_admin)):
+    return FileResponse("admin.html")
+
+
 @app.get("/api/reports/all")
-def get_all_reports(category: str = None, urgency: str = None):
+def get_all_reports(category: str = None, urgency: str = None, username: str = Depends(verify_admin)):
     if not supabase:
         return []
     try:
@@ -170,7 +195,7 @@ def get_all_reports(category: str = None, urgency: str = None):
 
 
 @app.patch("/api/reports/{report_id}/status")
-async def update_report_status(report_id: str, request: Request):
+async def update_report_status(report_id: str, request: Request, username: str = Depends(verify_admin)):
     if not supabase:
         raise HTTPException(status_code=500, detail="Supabase не инициализирован")
     
